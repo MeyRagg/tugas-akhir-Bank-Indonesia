@@ -1,4 +1,4 @@
 package com.lancar.tugasakhir.ui.theme
 
-class Color {
+class Typhography {
 }
