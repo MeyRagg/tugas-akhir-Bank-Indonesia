@@ -94,7 +94,11 @@ fun CategoryListScreen(
                     ) {
                         items(uiState.categories) { category ->
                             CategoryCard(category) {
-                                navController.navigate(Screen.BookList.createRoute(category.name))
+                                // --- PERBAIKAN UTAMA DI SINI ---
+                                // Panggilan navigasi sekarang menyertakan dua parameter:
+                                // 1. listType = nama kategori (untuk logika di ViewModel)
+                                // 2. listTitle = nama kategori (untuk judul di halaman berikutnya)
+                                navController.navigate(Screen.BookList.createRoute(category.name, category.name))
                             }
                         }
                     }
@@ -106,7 +110,6 @@ fun CategoryListScreen(
 
 @Composable
 private fun CategoryCard(category: LibraryCategory, onClick: () -> Unit) {
-    // animasi tekan halus (0.98x)
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.98f else 1f, tween(120), label = "press")

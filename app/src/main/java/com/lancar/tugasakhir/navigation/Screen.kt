@@ -18,6 +18,7 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     data object Scan : Screen("scan_screen", "Scan", Icons.Default.QrCodeScanner)
     data object Koleksi : Screen("koleksi_screen", "Koleksi", Icons.Default.CollectionsBookmark)
     data object Profile : Screen("profile_screen", "Profil", Icons.Default.Person)
+    data object Search : Screen("search_screen", "Pencarian")
 
     // Rute detail (tidak ada di Bottom Bar)
     data object EditProfile : Screen("edit_profile_screen", "Edit Profil")
@@ -39,9 +40,13 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
 //    }
 //    data object NotificationSettings : Screen("notification_settings_screen", "Notifikasi")
     data object CategoryList : Screen("category_list_screen", "Semua Kategori")
-    data object BookList : Screen("book_list_screen/{category}", "Daftar Buku") {
-        const val ARG = "category"
-        fun createRoute(category: String): String =
-            "book_list_screen/${Uri.encode(category.trim())}"
+    data object BookList : Screen("book_list_screen/{listType}/{listTitle}", "Daftar Buku") {
+        const val LIST_TYPE_ARG = "listType"
+        const val LIST_TITLE_ARG = "listTitle"
+        fun createRoute(listType: String, listTitle: String): String {
+            // Encode title untuk memastikan URL-safe
+            val encodedTitle = Uri.encode(listTitle.trim())
+            return "book_list_screen/${listType.trim()}/$encodedTitle"
+        }
     }
 }

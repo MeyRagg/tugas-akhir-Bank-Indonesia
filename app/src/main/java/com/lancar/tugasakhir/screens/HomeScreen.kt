@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -120,6 +121,7 @@ fun HomeScreen(
     }
 }
 
+
 @Composable
 fun HomeScreenContent(navController: NavController, uiState: HomeUiState) {
     LazyColumn(
@@ -132,47 +134,214 @@ fun HomeScreenContent(navController: NavController, uiState: HomeUiState) {
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
                     )
                 )
-            )
+            ),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(28.dp) // Jarak antar item
     ) {
         item {
             Spacer(modifier = Modifier.height(8.dp))
             HomeTopBar(navController = navController)
-            Spacer(modifier = Modifier.height(20.dp))
         }
         item {
-            WelcomeCard(name = uiState.userName, navController = navController)
-            Spacer(modifier = Modifier.height(28.dp))
+            WelcomeCard(
+                name = uiState.userName,
+                imageUrl = uiState.userProfileImageUrl,
+                navController = navController)
         }
         item {
             CategorySection(navController = navController, categories = uiState.categories)
-            Spacer(modifier = Modifier.height(28.dp))
         }
         item {
+            // --- TOMBOL 1 ---
             CollectionRow(
                 title = "📚 Buku Favorit Bulan Ini 📚",
-                subtitle = "Pilihan terbaik bulan ini",
+                subtitle = "Pilihan terbaik dari koleksi Anda",
                 items = uiState.favoriteBooks,
-                navController = navController
+                navController = navController,
+                onSeeAllClick = {
+                    navController.navigate(Screen.BookList.createRoute("favorites", "Buku Favorit"))
+                }
             )
-            Spacer(modifier = Modifier.height(28.dp))
         }
         item {
+            // --- TOMBOL 2 ---
             CollectionRow(
-                title = "🌟 Cuma Buat Kamu 🌟",
+                title = "✨ Cuma Buat Kamu ✨",
                 subtitle = "Rekomendasi personal",
                 items = uiState.recommendationBooks,
-                navController = navController
+                navController = navController,
+                onSeeAllClick = {
+                    navController.navigate(Screen.BookList.createRoute("recommendations", "Rekomendasi"))
+                }
             )
-            Spacer(modifier = Modifier.height(28.dp))
         }
         item {
+            // --- TOMBOL 3 ---
             CollectionRow(
-                title = "🏛 Koleksi Kami 🏛",
-                subtitle = "Koleksi terlengkap",
+                title = "📖 Koleksi Kami 📖",
+                subtitle = "Jelajahi semua koleksi yang tersedia",
                 items = uiState.ourCollectionBooks,
-                navController = navController
+                navController = navController,
+                onSeeAllClick = {
+                    navController.navigate(Screen.BookList.createRoute("our_collection", "Koleksi Kami"))
+                }
             )
-            Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+}
+
+// Composable baru untuk item di dalam Grid
+@Composable
+fun BookGridItem(
+    book: Book,
+    navController: NavController,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .aspectRatio(0.7f) // Rasio untuk sampul buku
+            .clickable {
+                navController.navigate(Screen.BookDetail.createRoute(book.id))
+            },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Box {
+            AsyncImage(
+                model = book.coverUrl,
+                contentDescription = book.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                placeholder = painterResource(id = R.drawable.ic_placeholder_book),
+                error = painterResource(id = R.drawable.ic_placeholder_book)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                            startY = 0.6f * 200 // Mulai gradient dari 60%
+                        )
+                    )
+            )
+            Text(
+                text = book.title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp)
+            )
+        }
+    }
+}
+
+// Header baru untuk section yang tidak memiliki tombol "lihat semua"
+@Composable
+fun SectionHeader(title: String, subtitle: String) {
+    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+        Text(
+            title,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Text(
+            subtitle,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+fun CollectionRow(
+    title: String,
+    subtitle: String,
+    items: List<Book>,
+    navController: NavController,
+    onSeeAllClick: () -> Unit
+) {
+    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    subtitle,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Ganti ikon MoreVert dengan ArrowForward
+            Card(
+                shape = CircleShape,
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                IconButton(onClick = onSeeAllClick) { // Gunakan parameter onClick
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Lihat Semua di $title",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (items.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.MenuBook,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Belum ada buku tersedia",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp)
+            ) {
+                items(items) { book ->
+                    CollectionItem(book = book, navController = navController)
+                }
+            }
         }
     }
 }
@@ -186,16 +355,14 @@ fun HomeTopBar(navController: NavController) {
             .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Card untuk kolom pencarian
         Card(
             modifier = Modifier
                 .weight(1f)
-                .height(48.dp) // Mengatur tinggi agar sama dengan tombol ikon
+                .height(48.dp)
                 .clickable {
-                    // Aksi saat kolom pencarian diklik, misalnya navigasi ke halaman pencarian
-                    // navController.navigate(Screen.Search.route)
+                    navController.navigate(Screen.Search.route)
                 },
-            shape = RoundedCornerShape(25.dp), // Membuat sudut lebih bulat
+            shape = RoundedCornerShape(25.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
@@ -224,8 +391,6 @@ fun HomeTopBar(navController: NavController) {
             }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
-
         // Card untuk tombol Notifikasi
         Card(
             shape = CircleShape,
@@ -250,7 +415,7 @@ fun HomeTopBar(navController: NavController) {
 }
 
 @Composable
-fun WelcomeCard(name: String, navController: NavController) {
+fun WelcomeCard(name: String, imageUrl: String?, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -291,15 +456,20 @@ fun WelcomeCard(name: String, navController: NavController) {
                             containerColor = Color.White.copy(alpha = 0.2f)
                         )
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_profile),
+                        AsyncImage(
+                            model = imageUrl,
                             contentDescription = "Avatar",
                             modifier = Modifier
                                 .size(56.dp)
                                 .padding(8.dp)
-                                .clip(CircleShape)
+                                .clip(CircleShape),
+                            placeholder = painterResource(id = R.drawable.ic_profile),
+                            error = painterResource(id = R.drawable.ic_profile),
+                            contentScale = ContentScale.Crop
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(16.dp))
 
                     Spacer(modifier = Modifier.width(16.dp))
 
@@ -438,7 +608,7 @@ fun CategoryItem(category: LibraryCategory, navController: NavController) {
         modifier = Modifier
             .size(120.dp)
             .clickable {
-                navController.navigate("book_list_screen/${Uri.encode(category.name)}")
+                navController.navigate(Screen.BookList.createRoute(category.name, category.name))
             }
             .shadow(6.dp, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
@@ -481,92 +651,6 @@ fun CategoryItem(category: LibraryCategory, navController: NavController) {
                 color = MaterialTheme.colorScheme.onSurface,
                 overflow = TextOverflow.Ellipsis
             )
-        }
-    }
-}
-
-@Composable
-fun CollectionRow(
-    title: String,
-    subtitle: String,
-    items: List<Book>,
-    navController: NavController
-) {
-    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    subtitle,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Card(
-                shape = CircleShape,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = "More in $title",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (items.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(40.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        Icons.Default.MenuBook,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Belum ada buku tersedia",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        } else {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp)
-            ) {
-                items(items) { book ->
-                    CollectionItem(book = book, navController = navController)
-                }
-            }
         }
     }
 }

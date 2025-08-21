@@ -435,7 +435,7 @@ fun ProfileContent(
             ) {
                 Box(modifier = Modifier.size(120.dp)) {
                     AsyncImage(
-                        model = initialProfile.profileImageUrl ?: R.drawable.ic_profile,
+                        model = initialProfile.fullProfileImageUrl ?: R.drawable.ic_profile,
                         contentDescription = "Foto Profil",
                         modifier = Modifier
                             .size(120.dp)

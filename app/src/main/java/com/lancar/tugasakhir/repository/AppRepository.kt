@@ -17,7 +17,6 @@ class AppRepository @Inject constructor(
     private val notificationHistoryDao: NotificationHistoryDao
 ) {
 
-    // ====================== AUTH ======================
     suspend fun login(req: LoginRequest): Response<ApiService.LoginData> {
         val body = mapOf("email" to req.email, "pass" to req.pass)
         return api.login(body)
@@ -29,11 +28,36 @@ class AppRepository @Inject constructor(
             "email" to req.email,
             "pass" to req.pass,
             "address" to req.address,
-            "birthDate" to req.birthDate,
-            "phoneNumber" to req.phoneNumber,
+            "birth_date" to req.birthDate,
+            "phone_number" to req.phoneNumber,
             "institution" to req.institution
         )
         return api.register(body)
+    }
+
+    // ====================== PROFILE ======================
+    suspend fun getProfile(): Response<ApiService.ApiEnvelope<User>> {
+        return api.getProfile()
+    }
+
+    suspend fun updateProfile(user: User): Response<ApiService.ApiEnvelope<Unit>> {
+        val body = mapOf(
+            "name" to user.name,
+            "address" to user.address,
+            "birth_date" to user.birthDate,
+            "phone_number" to user.phoneNumber,
+            "institution" to user.institution
+        )
+        return api.updateProfile(body)
+    }
+
+    suspend fun searchBooks(query: String): List<Book> {
+        return try {
+            val response = api.searchBooks(query)
+            response.data ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     // ====================== BOOKS ======================
@@ -87,17 +111,6 @@ class AppRepository @Inject constructor(
         return api.requestReturn(mapOf("historyId" to historyId))
     }
 
-    // ====================== PROFILE ======================
-    suspend fun getProfile(): Response<ApiService.ApiEnvelope<User>> {
-        return api.getProfile()
-    }
-    suspend fun updateProfile(user: User): Response<ApiService.ApiEnvelope<Unit>> {
-        val body = mapOf(
-            "name" to user.name, "address" to user.address, "birth_date" to user.birthDate,
-            "phone_number" to user.phoneNumber, "institution" to user.institution
-        )
-        return api.updateProfile(body)
-    }
     suspend fun uploadProfileImage(imagePart: MultipartBody.Part): Response<ApiService.ApiEnvelope<String>> {
         return api.uploadProfileImage(imagePart)
     }

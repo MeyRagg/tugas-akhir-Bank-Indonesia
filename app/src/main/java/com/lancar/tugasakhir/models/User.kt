@@ -26,4 +26,13 @@ data class User(
 
     @SerializedName("address")
     val address: String?
-)
+) {
+    val fullProfileImageUrl: String?
+    get() {
+        if (profileImageUrl.isNullOrBlank()) {
+            return null
+        }
+        val baseUrl = "https://satuperpustakaanku.my.id" + profileImageUrl
+        return "$baseUrl?v=${System.currentTimeMillis()}"
+    }
+}

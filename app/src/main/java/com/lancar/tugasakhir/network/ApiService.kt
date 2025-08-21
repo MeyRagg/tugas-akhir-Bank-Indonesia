@@ -63,6 +63,9 @@ interface ApiService {
     @GET("categories")
     suspend fun getCategories(): List<LibraryCategory>
 
+    @GET("books/search")
+    suspend fun searchBooks(@Query("q") query: String): ApiEnvelope<List<Book>>
+
 
     // ================== BORROW / HISTORY ==================
     @POST("user/borrow")

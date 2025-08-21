@@ -19,7 +19,8 @@ data class HomeUiState(
     val recommendationBooks: List<Book> = emptyList(),
     val ourCollectionBooks: List<Book> = emptyList(),
     val errorMessage: String? = null,
-    val userName: String = ""
+    val userName: String = "",
+    val userProfileImageUrl: String? = null
 )
 
 @HiltViewModel
@@ -43,13 +44,10 @@ class HomeViewModel @Inject constructor(
             }
 
             try {
-                // --- PERBAIKAN DI SINI ---
                 val userResponse = appRepository.getProfile()
-                val userName = if (userResponse.isSuccessful) {
-                    userResponse.body()?.data?.name ?: "Pengguna"
-                } else {
-                    "Pengguna"
-                }
+                val userData = if (userResponse.isSuccessful) userResponse.body()?.data else null
+                val userName = userData?.name ?: "Pengguna"
+                val imageUrl = userData?.fullProfileImageUrl
 
                 val favoriteBooks = appRepository.getKoleksiBooks()
                 val categories = appRepository.getCategories()
@@ -61,6 +59,7 @@ class HomeViewModel @Inject constructor(
                         isLoading = false,
                         isSyncing = false,
                         userName = userName,
+                        userProfileImageUrl = imageUrl,
                         categories = categories,
                         favoriteBooks = favoriteBooks,
                         recommendationBooks = recBooks,

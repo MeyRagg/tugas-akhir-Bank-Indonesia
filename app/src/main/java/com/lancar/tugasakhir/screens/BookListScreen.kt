@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,19 +42,20 @@ import com.lancar.tugasakhir.viewmodel.BookListViewModel
 @Composable
 fun BookListScreen(
     navController: NavController,
-    categoryName: String,
+    listType: String,
+    listTitle: String,
     viewModel: BookListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(categoryName) {
-        viewModel.fetchBooks(categoryName)
+    LaunchedEffect(listType) {
+        viewModel.fetchBooks(listType)
     }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(categoryName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
+                title = { Text(listTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
@@ -71,20 +73,18 @@ fun BookListScreen(
                 is BookListUiState.Loading -> LoadingView()
                 is BookListUiState.Error -> ErrorView(
                     message = state.message,
-                    onRetry = { viewModel.fetchBooks(categoryName) }
+                    onRetry = { viewModel.fetchBooks(listType) }
                 )
                 is BookListUiState.Success -> {
                     if (state.books.isEmpty()) {
-                        EmptyBookState(categoryName)
+                        EmptyBookState(listTitle)
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(state.books) { book ->
-                                // --- PERBAIKAN DI SINI ---
-                                // Sekarang memanggil BookListItem dengan parameter onClick yang dibutuhkan
+                            items(state.books, key = { it.id }) { book ->
                                 BookListItem(book = book, onClick = {
                                     navController.navigate(Screen.BookDetail.createRoute(book.id))
                                 })
@@ -187,7 +187,7 @@ private fun EmptyBookState(categoryName: String) {
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            Icons.Default.MenuBook,
+            Icons.AutoMirrored.Filled.MenuBook,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant

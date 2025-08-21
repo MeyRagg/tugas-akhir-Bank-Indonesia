@@ -117,19 +117,26 @@ fun NavGraph(
                 CategoryListScreen(navController = navController)
             }
 
-            // Book List (kategori) — decode argumen yang sebelumnya di-encode saat navigate
             composable(
-                route = Screen.BookList.route, // "book_list_screen/{category}"
+                route = Screen.BookList.route,
                 arguments = listOf(
-                    navArgument(Screen.BookList.ARG) { type = NavType.StringType }
+                    navArgument(Screen.BookList.LIST_TYPE_ARG) { type = NavType.StringType },
+                    navArgument(Screen.BookList.LIST_TITLE_ARG) { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val raw = backStackEntry.arguments?.getString(Screen.BookList.ARG).orEmpty()
-                val category = Uri.decode(raw)
+                val listType = backStackEntry.arguments?.getString(Screen.BookList.LIST_TYPE_ARG).orEmpty()
+                val rawTitle = backStackEntry.arguments?.getString(Screen.BookList.LIST_TITLE_ARG).orEmpty()
+                val listTitle = Uri.decode(rawTitle)
+
                 BookListScreen(
                     navController = navController,
-                    categoryName = category      // ⬅️ disamakan dengan parameter di BookListScreen
+                    listType = listType,
+                    listTitle = listTitle
                 )
+            }
+
+            composable(route = Screen.Search.route) {
+                SearchScreen(navController = navController)
             }
 
             composable(

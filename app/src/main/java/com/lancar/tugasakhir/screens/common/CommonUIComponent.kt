@@ -1,16 +1,33 @@
-// In file: com/lancar/tugasakhir/screens/common/CommonUiComponents.kt
 package com.lancar.tugasakhir.screens.common
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.lancar.tugasakhir.R
+import com.lancar.tugasakhir.models.Book
 
 @Composable
 fun LoadingView(modifier: Modifier = Modifier) {
@@ -58,5 +75,86 @@ fun ErrorView(
         Button(onClick = onRetry) {
             Text("Coba Lagi")
         }
+    }
+}
+
+// --- FUNGSI BARU YANG DIPINDAHKAN KE SINI ---
+@Composable
+fun BookListItem(book: Book, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, label = "press")
+
+    Card(
+        modifier = Modifier
+            .scale(scale)
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = onClick
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = book.coverUrl,
+                contentDescription = "Cover buku ${book.title}",
+                modifier = Modifier
+                    .size(width = 84.dp, height = 116.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                placeholder = painterResource(id = R.drawable.ic_placeholder_book),
+                error = painterResource(id = R.drawable.ic_placeholder_book),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(Modifier.width(16.dp))
+
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = book.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = book.author ?: "Penulis tidak diketahui",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(10.dp))
+                book.status?.let { StatusPill(it) }
+            }
+        }
+    }
+}
+
+@Composable
+fun StatusPill(status: String) {
+    val (label, color) = when (status.uppercase()) {
+        "TERSEDIA" -> "Tersedia" to Color(0xFF4CAF50)
+        "DIPESAN" -> "Dipesan" to Color(0xFFFF9800)
+        "DIPINJAM" -> "Dipinjam" to Color(0xFFF44336)
+        else -> status to Color.Gray
+    }
+
+    Surface(shape = CircleShape, color = color.copy(alpha = 0.1f)) {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+        )
     }
 }

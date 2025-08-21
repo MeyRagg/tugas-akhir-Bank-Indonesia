@@ -74,6 +74,8 @@ fun ScannerScreen(
             } else {
                 val scannedData = result.contents
                 lastScanned = scannedData
+                // --- PERUBAHAN LOGIKA ---
+                // Gunakan handleScannedData untuk parsing yang lebih canggih
                 handleScannedData(scannedData, context, navController)
             }
         }
@@ -87,9 +89,11 @@ fun ScannerScreen(
                 val scanned = decodeQrCodeFromUri(context, uri)
                 if (scanned != null) {
                     lastScanned = scanned
+                    // --- PERUBAHAN LOGIKA ---
+                    // Gunakan handleScannedData untuk parsing yang lebih canggih
                     handleScannedData(scanned, context, navController)
                 } else {
-                    Toast.makeText(context, "QR Code tidak ditemukan di gambar", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "QR Code/Barcode tidak ditemukan di gambar", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -141,7 +145,6 @@ fun ScannerScreen(
         ) {
             item { Spacer(Modifier.height(16.dp)) }
 
-            // Banner persegi di tengah
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -150,7 +153,7 @@ fun ScannerScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth(0.82f)
-                            .aspectRatio(1f), // persegi
+                            .aspectRatio(1f),
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
                         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
@@ -201,7 +204,6 @@ fun ScannerScreen(
 
             item { Spacer(Modifier.height(24.dp)) }
 
-            // Aksi cepat — Kamera & Galeri
             item {
                 Column(Modifier.fillMaxWidth()) {
                     QuickActionButton(
@@ -230,6 +232,7 @@ fun ScannerScreen(
 
             item { Spacer(Modifier.height(24.dp)) }
 
+            // Tampilkan hasil scan terakhir jika ada
             if (lastScanned != null) {
                 item {
                     Card(
@@ -257,6 +260,7 @@ fun ScannerScreen(
                 item { Spacer(Modifier.height(16.dp)) }
             }
 
+            // Info card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -400,13 +404,13 @@ private fun handleScannedData(data: String, context: Context, navController: Nav
     }
 
     // 4) Hanya angka:
-    //    - Panjang >= 8: anggap barcode (tampilkan info dulu)
+    //    - Panjang >= 8: anggap barcode, arahkan ke BarcodeResult untuk pencarian
     //    - Lainnya: anggap sebagai ID buku langsung
     val cleaned = data.trim()
     if (cleaned.all { it.isDigit() }) {
         if (cleaned.length >= 8) {
-            // Jika nanti ada endpoint lookup barcode -> arahkan ke detail setelah resolve ID.
-            Toast.makeText(context, "Barcode terbaca: $cleaned", Toast.LENGTH_SHORT).show()
+            // Arahkan ke BarcodeResult untuk pencarian barcode
+            navController.navigate(Screen.BarcodeResult.createRoute(cleaned))
             return
         } else {
             navController.navigate(Screen.BookDetail.createRoute(cleaned))
@@ -414,8 +418,8 @@ private fun handleScannedData(data: String, context: Context, navController: Nav
         }
     }
 
-    // 5) Default: tampilkan apa adanya
-    Toast.makeText(context, "Hasil Pindai: $data", Toast.LENGTH_LONG).show()
+    // 5) Default: arahkan ke BarcodeResult untuk pencarian umum
+    navController.navigate(Screen.BarcodeResult.createRoute(data))
 }
 
 private fun decodeQrCodeFromUri(context: Context, uri: Uri): String? {

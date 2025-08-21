@@ -123,7 +123,7 @@ fun ProfileScreen(
                             EnhancedUserInfoHeader(
                                 name = state.user.name ?: "Nama Pengguna",
                                 email = state.user.email ?: "Email tidak tersedia",
-                                imageUrl = state.user.profileImageUrl,
+                                imageUrl = state.user.fullProfileImageUrl,
                                 onProfileClick = { navController.navigate(Screen.EditProfile.route) }
                             )
                         }

@@ -15,9 +15,9 @@ import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-@Singleton // Anotasi agar Hilt hanya membuat satu instance dari repository ini
+@Singleton
 class UserPreferencesRepository @Inject constructor(
-    @ApplicationContext private val context: Context // Hilt akan menyediakan context secara otomatis
+    @ApplicationContext private val context: Context
 ) {
     private val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
     private val AUTH_TOKEN = stringPreferencesKey("auth_token")
@@ -27,7 +27,6 @@ class UserPreferencesRepository @Inject constructor(
             preferences[IS_ONBOARDING_COMPLETED] ?: false
         }
 
-    // Flow untuk memeriksa apakah token ada
     val authToken: Flow<String?> = context.dataStore.data
         .map { preferences ->
             preferences[AUTH_TOKEN]
@@ -39,14 +38,12 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    // Fungsi untuk menyimpan token setelah login berhasil
     suspend fun saveAuthToken(token: String) {
         context.dataStore.edit { settings ->
             settings[AUTH_TOKEN] = token
         }
     }
 
-    // Fungsi untuk menghapus token saat logout
     suspend fun clearAuthToken() {
         context.dataStore.edit { settings ->
             settings.remove(AUTH_TOKEN)

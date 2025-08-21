@@ -50,11 +50,9 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    // --- PERBAIKAN DI SINI: Parameter diubah menjadi User ---
     fun saveUserProfile(user: User, onResult: (isSuccess: Boolean, message: String) -> Unit) {
         viewModelScope.launch {
             try {
-                // Sekarang mengirim objek User
                 val response = repository.updateProfile(user)
                 if (response.isSuccessful) {
                     onResult(true, "Profil berhasil diperbarui")
@@ -74,12 +72,12 @@ class EditProfileViewModel @Inject constructor(
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
                     val fileBytes = inputStream.readBytes()
                     val requestFile = fileBytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
-                    val body = MultipartBody.Part.createFormData("image", "profile.jpg", requestFile)
+                    val body = MultipartBody.Part.createFormData("profileImage", "profile.jpg", requestFile)
 
                     val response = repository.uploadProfileImage(body)
                     if (response.isSuccessful) {
                         onResult(true, "Foto profil berhasil diunggah")
-                        fetchUserProfile()
+                        fetchUserProfile() // Langsung muat ulang data dari server
                     } else {
                         onResult(false, "Upload Gagal: ${response.errorBody()?.string()}")
                     }
