@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -19,9 +20,14 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.lancar.tugasakhir.screens.*
+import com.lancar.tugasakhir.viewmodel.AuthViewModel
+
+private const val AUTH_GRAPH_ROUTE = "auth_graph"
 
 @Composable
 fun NavGraph(
@@ -93,9 +99,33 @@ fun NavGraph(
                     }
                 )
             }
-            composable(route = Screen.Login.route) { LoginScreen(navController = navController) }
-            composable(route = Screen.Register.route) { RegisterScreen(navController = navController) }
-            composable(route = Screen.CreatePassword.route) { CreatePasswordScreen(navController = navController) }
+
+            composable(route = Screen.Login.route) {
+                LoginScreen(navController = navController)
+            }
+
+            // ========= AUTH SUBGRAPH (Register & CreatePassword share satu AuthViewModel) =========
+            navigation(
+                route = AUTH_GRAPH_ROUTE,
+                startDestination = Screen.Register.route
+            ) {
+                composable(route = Screen.Register.route) { backStackEntry ->
+                    val parent = remember(backStackEntry) {
+                        navController.getBackStackEntry(AUTH_GRAPH_ROUTE)
+                    }
+                    val authVM: AuthViewModel = hiltViewModel(parent)
+                    RegisterScreen(navController = navController, authViewModel = authVM)
+                }
+
+                composable(route = Screen.CreatePassword.route) { backStackEntry ->
+                    val parent = remember(backStackEntry) {
+                        navController.getBackStackEntry(AUTH_GRAPH_ROUTE)
+                    }
+                    val authVM: AuthViewModel = hiltViewModel(parent)
+                    CreatePasswordScreen(navController = navController, authViewModel = authVM)
+                }
+            }
+            // ======================================================================================
 
             composable(route = Screen.Home.route) { HomeScreen(navController = navController) }
 
@@ -148,15 +178,12 @@ fun NavGraph(
                     barcode = barcode,
                     onResolved = { bookId ->
                         if (bookId != null) {
-                            // Langsung lompat ke detail, sambil pop layar result supaya clean
                             navController.popBackStack()
                             navController.navigate(
                                 com.lancar.tugasakhir.navigation.Screen.BookDetail.createRoute(
                                     bookId
                                 )
                             )
-                        } else {
-                            // Tetap di layar result; composable akan tampilkan info "tidak ditemukan"
                         }
                     }
                 )

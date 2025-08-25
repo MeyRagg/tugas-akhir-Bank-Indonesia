@@ -8,7 +8,7 @@ import com.google.gson.annotations.SerializedName
 data class Book(
     @PrimaryKey
     @SerializedName("id")
-    val id: String,                         // backend int, di app tetap String biar aman
+    val id: String,
 
     @SerializedName("title")
     val title: String,
@@ -46,7 +46,6 @@ data class Book(
     @SerializedName("status")
     val status: String?,
 
-    // Khusus detail (cek koleksi)
     @SerializedName("isInCollection")
     val isInCollection: Boolean?
 )

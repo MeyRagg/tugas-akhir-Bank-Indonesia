@@ -36,7 +36,19 @@ fun CreatePasswordScreen(
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Efek untuk menampilkan pesan error dari ViewModel
+    // Guard: pastikan data registrasi ada (di SavedStateHandle yang sama)
+    LaunchedEffect(Unit) {
+        val s = authViewModel.registrationState.value
+        val incomplete = listOf(
+            s.name, s.address, s.email, s.birthDate, s.phoneNumber, s.institution
+        ).any { it.isBlank() }
+        if (incomplete) {
+            Toast.makeText(context, "Lengkapi form registrasi dulu.", Toast.LENGTH_LONG).show()
+            navController.popBackStack(Screen.Register.route, false)
+        }
+    }
+
+    // Tampilkan error dari ViewModel
     LaunchedEffect(authState.errorMessage) {
         authState.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
@@ -44,7 +56,7 @@ fun CreatePasswordScreen(
         }
     }
 
-    // Efek untuk navigasi setelah registrasi berhasil
+    // Navigasi setelah sukses
     LaunchedEffect(authState.isSuccess) {
         if (authState.isSuccess) {
             navController.navigate(Screen.Home.route) {
@@ -80,7 +92,6 @@ fun CreatePasswordScreen(
                 Text("Buat password yang kuat untuk akun Anda.")
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // KOLOM ISIAN PASSWORD
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -96,7 +107,6 @@ fun CreatePasswordScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // KOLOM ISIAN KONFIRMASI PASSWORD
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
@@ -114,12 +124,13 @@ fun CreatePasswordScreen(
 
                 Button(
                     onClick = {
-                        if (password.isBlank() || confirmPassword.isBlank()) {
-                            Toast.makeText(context, "Password tidak boleh kosong", Toast.LENGTH_SHORT).show()
-                        } else if (password != confirmPassword) {
-                            Toast.makeText(context, "Password tidak cocok", Toast.LENGTH_SHORT).show()
-                        } else {
-                            authViewModel.register(password)
+                        when {
+                            password.isBlank() || confirmPassword.isBlank() ->
+                                Toast.makeText(context, "Password tidak boleh kosong", Toast.LENGTH_SHORT).show()
+                            password != confirmPassword ->
+                                Toast.makeText(context, "Password tidak cocok", Toast.LENGTH_SHORT).show()
+                            else ->
+                                authViewModel.register(password)
                         }
                     },
                     modifier = Modifier

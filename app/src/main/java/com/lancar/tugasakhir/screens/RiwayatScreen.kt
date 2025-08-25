@@ -247,21 +247,21 @@ fun HistoryList(books: List<BorrowedBook>, viewModel: RiwayatViewModel) {
 fun EmptyState(pageIndex: Int) {
     val (message, icon, color) = when(pageIndex) {
         0 -> Triple(
-            "Anda tidak memiliki buku yang sedang dipinjam.\nMulai jelajahi koleksi kami!",
+            "Riwayat peminjaman Anda masih kosong.\nMulai jelajahi koleksi kami!",
             Icons.Default.MenuBook,
             Color(0xFFE57373)
         )
         1 -> Triple(
-            "Tidak ada buku yang sedang dalam proses.\nRiwayat proses akan muncul di sini.",
+            "Riwayat peminjaman Anda masih kosong.\nRiwayat proses akan muncul di sini.",
             Icons.Default.HourglassEmpty,
             Color(0xFFFFB74D)
         )
         2 -> Triple(
-            "Anda belum memiliki riwayat peminjaman yang selesai.\nSelesaikan peminjaman untuk melihat riwayat.",
+            "Riwayat peminjaman Anda masih kosong.\nSelesaikan peminjaman untuk melihat riwayat.",
             Icons.Default.CheckCircle,
             Color(0xFF81C784)
         )
-        else -> Triple("Tidak ada data.", Icons.Default.Info, Color.Gray)
+        else -> Triple("Riwayat peminjaman Anda masih kosong.", Icons.Default.Info, Color.Gray)
     }
 
     Card(
@@ -301,6 +301,64 @@ fun EmptyState(pageIndex: Int) {
 
             Text(
                 text = message,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 22.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun EmptyCollectionState() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Card(
+                shape = CircleShape,
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF64B5F6).copy(alpha = 0.1f)
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LibraryBooks,
+                    contentDescription = null,
+                    tint = Color(0xFF64B5F6),
+                    modifier = Modifier
+                        .size(64.dp)
+                        .padding(16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Koleksi Anda Masih Kosong",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Simpan buku yang Anda\nminati dengan menekan\ntombol \"Koleksi\" pada\nhalaman detail buku.",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -18,9 +18,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.lancar.tugasakhir.navigation.Screen
 import com.lancar.tugasakhir.viewmodel.AuthViewModel
+import com.lancar.tugasakhir.viewmodel.RegistrationState
 import java.util.Date
 import java.util.Locale
 
@@ -30,20 +32,23 @@ fun RegisterScreen(
     navController: NavController,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    var nama by remember { mutableStateOf("") }
-    var alamat by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var tanggalLahir by remember { mutableStateOf("") }
-    var nomorHp by remember { mutableStateOf("") }
-    // --- TAMBAHAN BARU ---
-    var institusi by remember { mutableStateOf("") }
+    // HAPUS reset state agar data tidak hilang saat back dari screen password
 
-    // --- TAMBAHAN BARU: 'institusi' ditambahkan ke dalam validasi ---
-    val isFormComplete by remember(nama, alamat, email, tanggalLahir, nomorHp, institusi) {
-        mutableStateOf(
-            nama.isNotBlank() && alamat.isNotBlank() && email.isNotBlank() &&
-                    tanggalLahir.isNotBlank() && nomorHp.isNotBlank() && institusi.isNotBlank()
-        )
+    LaunchedEffect(Unit) {
+        authViewModel.updateRegistrationField { RegistrationState() } // Mengosongkan form
+    }
+
+    val regState by authViewModel.registrationState.collectAsStateWithLifecycle()
+
+    val isFormComplete by remember(regState) {
+        derivedStateOf {
+            regState.name.isNotBlank() &&
+                    regState.address.isNotBlank() &&
+                    regState.email.isNotBlank() &&
+                    regState.birthDate.isNotBlank() &&
+                    regState.phoneNumber.isNotBlank() &&
+                    regState.institution.isNotBlank()
+        }
     }
 
     val datePickerState = rememberDatePickerState(
@@ -73,13 +78,21 @@ fun RegisterScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         datePickerState.selectedDateMillis?.let {
-                            tanggalLahir = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date(it))
+                            val selectedDate = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                                .format(Date(it))
+                            authViewModel.updateRegistrationField { state ->
+                                state.copy(birthDate = selectedDate)
+                            }
                         }
                         showDatePicker = false
                     }) { Text("OK") }
                 },
-                dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Batal") } }
-            ) { DatePicker(state = datePickerState) }
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) { Text("Batal") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
         }
 
         Column(
@@ -95,68 +108,91 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
-                value = nama, onValueChange = { nama = it },
-                label = { Text("Nama Lengkap") }, modifier = Modifier.fillMaxWidth(), singleLine = true
+                value = regState.name,
+                onValueChange = { newValue ->
+                    authViewModel.updateRegistrationField { it.copy(name = newValue) }
+                },
+                label = { Text("Nama Lengkap") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
-                value = alamat, onValueChange = { alamat = it },
-                label = { Text("Alamat") }, modifier = Modifier.fillMaxWidth(), singleLine = true
+                value = regState.address,
+                onValueChange = { newValue ->
+                    authViewModel.updateRegistrationField { it.copy(address = newValue) }
+                },
+                label = { Text("Alamat") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
-                value = email, onValueChange = { email = it },
-                label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), singleLine = true
+                value = regState.email,
+                onValueChange = { newValue ->
+                    authViewModel.updateRegistrationField { it.copy(email = newValue) }
+                },
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Tanggal: readOnly + clickable (tidak disabled agar bisa ditekan)
             OutlinedTextField(
-                value = tanggalLahir, onValueChange = { },
+                value = regState.birthDate,
+                onValueChange = { /* no-op */ },
                 label = { Text("Tanggal Lahir") },
-                modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
-                readOnly = true, enabled = false,
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                trailingIcon = { Icon(imageVector = Icons.Default.CalendarToday, contentDescription = "Pilih Tanggal") }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDatePicker = true },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = "Pilih Tanggal"
+                        )
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
-                value = nomorHp, onValueChange = { nomorHp = it },
-                label = { Text("Nomor HP") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                value = regState.phoneNumber,
+                onValueChange = { newValue ->
+                    authViewModel.updateRegistrationField { it.copy(phoneNumber = newValue) }
+                },
+                label = { Text("Nomor HP") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
             )
-            // --- KOLOM ISIAN BARU UNTUK INSTITUSI ---
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = institusi, onValueChange = { institusi = it },
-                label = { Text("Institusi") }, modifier = Modifier.fillMaxWidth(), singleLine = true
-            )
-            // ------------------------------------------
 
+            OutlinedTextField(
+                value = regState.institution,
+                onValueChange = { newValue ->
+                    authViewModel.updateRegistrationField { it.copy(institution = newValue) }
+                },
+                label = { Text("Institusi") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = {
-                    authViewModel.updateRegistrationData(
-                        name = nama,
-                        address = alamat,
-                        email = email,
-                        birthDate = tanggalLahir,
-                        phoneNumber = nomorHp,
-                        // --- TAMBAHAN BARU ---
-                        institution = institusi
-                    )
-                    navController.navigate(Screen.CreatePassword.route)
-                },
+                onClick = { navController.navigate(Screen.CreatePassword.route) },
                 enabled = isFormComplete,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(24.dp)
-            ) { Text("Lanjutkan", fontSize = 16.sp) }
+            ) {
+                Text("Lanjutkan", fontSize = 16.sp)
+            }
         }
     }
 }

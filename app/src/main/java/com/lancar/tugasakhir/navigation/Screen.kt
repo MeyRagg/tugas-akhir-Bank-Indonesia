@@ -13,7 +13,7 @@ sealed class Screen(val route: String, val title: String? = null, val icon: Imag
     data object CreatePassword : Screen("create_password_screen")
 
     // Rute untuk layar di dalam Bottom Navigation Bar
-    data object Home : Screen("home_screen", "Home", Icons.Default.Home)
+    data object Home : Screen("home_screen", "Beranda", Icons.Default.Home)
     data object Riwayat : Screen("riwayat_screen", "Riwayat", Icons.Default.History)
     data object Scan : Screen("scan_screen", "Scan", Icons.Default.QrCodeScanner)
     data object Koleksi : Screen("koleksi_screen", "Koleksi", Icons.Default.CollectionsBookmark)

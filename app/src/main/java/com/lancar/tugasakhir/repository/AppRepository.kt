@@ -28,9 +28,9 @@ class AppRepository @Inject constructor(
             "email" to req.email,
             "pass" to req.pass,
             "address" to req.address,
-            "birth_date" to req.birthDate,
-            "phone_number" to req.phoneNumber,
-            "institution" to req.institution
+            "birthDate" to req.birthDate,
+            "phoneNumber" to req.phoneNumber,
+            "institution" to req.institution  // ✅ No null safety issues
         )
         return api.register(body)
     }
@@ -42,11 +42,11 @@ class AppRepository @Inject constructor(
 
     suspend fun updateProfile(user: User): Response<ApiService.ApiEnvelope<Unit>> {
         val body = mapOf(
-            "name" to user.name,
-            "address" to user.address,
-            "birth_date" to user.birthDate,
-            "phone_number" to user.phoneNumber,
-            "institution" to user.institution
+            "name" to (user.name ?: ""),
+            "address" to (user.address ?: ""),
+            "birthDate" to (user.birthDate ?: ""),
+            "phoneNumber" to (user.phoneNumber ?: ""),
+            "institution" to (user.institution ?: "")  // ✅ Handle User nullable fields
         )
         return api.updateProfile(body)
     }

@@ -1,10 +1,10 @@
 package com.lancar.tugasakhir.viewmodel
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.messaging.FirebaseMessaging
-import com.lancar.tugasakhir.data.RegistrationHolder
 import com.lancar.tugasakhir.data.UserPreferencesRepository
 import com.lancar.tugasakhir.models.LoginRequest
 import com.lancar.tugasakhir.models.RegisterRequest
@@ -28,39 +28,94 @@ data class AuthUiState(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repository: AppRepository,
-    private val prefsRepository: UserPreferencesRepository
+    private val prefsRepository: UserPreferencesRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState = _uiState.asStateFlow()
 
-    fun updateRegistrationData(
-        name: String, address: String, email: String,
-        birthDate: String, phoneNumber: String, institution: String
-    ) {
-        RegistrationHolder.data = RegisterRequest(
-            name, address, email, "", birthDate, phoneNumber, institution
-        )
+    val registrationState = savedStateHandle.getStateFlow("registrationState", RegistrationState())
+
+    fun updateRegistrationField(updateAction: (RegistrationState) -> RegistrationState) {
+        val newState = updateAction(registrationState.value)
+        savedStateHandle["registrationState"] = newState
     }
 
     fun register(password: String) {
-        val current = RegistrationHolder.data?.copy(pass = password)
-        if (current == null) {
-            _uiState.update { it.copy(errorMessage = "Data registrasi tidak lengkap.") }
-            return
+        val currentData = registrationState.value
+
+        val request = RegisterRequest(
+            name = currentData.name.trim(),
+            address = currentData.address.trim(),
+            email = currentData.email.trim(),
+            pass = password,
+            birthDate = currentData.birthDate.trim(),
+            phoneNumber = currentData.phoneNumber.trim(),
+            institution = currentData.institution.trim()  // ✅ Safe karena both non-nullable
+        )
+
+        // Validasi tetap sama - semua field non-nullable
+        when {
+            request.name.isBlank() -> {
+                _uiState.update { it.copy(errorMessage = "Nama tidak boleh kosong") }
+                return
+            }
+            request.address.isBlank() -> {
+                _uiState.update { it.copy(errorMessage = "Alamat tidak boleh kosong") }
+                return
+            }
+            request.email.isBlank() -> {
+                _uiState.update { it.copy(errorMessage = "Email tidak boleh kosong") }
+                return
+            }
+            request.pass.isBlank() -> {
+                _uiState.update { it.copy(errorMessage = "Password tidak boleh kosong") }
+                return
+            }
+            request.birthDate.isBlank() -> {
+                _uiState.update { it.copy(errorMessage = "Tanggal lahir tidak boleh kosong") }
+                return
+            }
+            request.phoneNumber.isBlank() -> {
+                _uiState.update { it.copy(errorMessage = "Nomor HP tidak boleh kosong") }
+                return
+            }
+            request.institution.isBlank() -> {  // ✅ No more null safety warning
+                _uiState.update { it.copy(errorMessage = "Institusi tidak boleh kosong") }
+                return
+            }
         }
+
+        // Rest of registration logic...
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, isSuccess = false) }
             try {
-                val regResp = repository.register(current)
-                if (regResp.isSuccessful) {
-                    login(current.email, current.pass)
-                } else {
+                val regResp = repository.register(request)
+                if (!regResp.isSuccessful) {
                     val msg = extractHttpMessage(regResp.errorBody()?.string())
-                    _uiState.update { it.copy(isLoading = false, errorMessage = msg ?: "Registrasi gagal.") }
+                    throw Exception(msg ?: "Registrasi gagal.")
                 }
+
+                val loginResp = repository.login(LoginRequest(request.email, request.pass))
+                if (loginResp.isSuccessful) {
+                    val token = loginResp.body()?.token
+                    if (!token.isNullOrBlank()) {
+                        prefsRepository.saveAuthToken(token)
+                        sendFcmTokenToServer()
+                        _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                    } else {
+                        throw Exception("Token kosong diterima dari server.")
+                    }
+                } else {
+                    throw HttpException(loginResp)
+                }
+
+            } catch (e: HttpException) {
+                val msg = "Gagal login setelah registrasi (Kode: ${e.code()})."
+                _uiState.update { it.copy(isLoading = false, errorMessage = msg) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = "Registrasi Gagal: ${e.message}") }
+                _uiState.update { it.copy(isLoading = false, errorMessage = "Proses Pendaftaran Gagal: ${e.message}") }
             }
         }
     }
@@ -70,11 +125,8 @@ class AuthViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null, isSuccess = false) }
             try {
                 val response = repository.login(LoginRequest(email, pass))
-
                 if (response.isSuccessful) {
-                    val loginData = response.body()
-                    val token = loginData?.token // <-- SEKARANG INI AKAN DIKENALI
-
+                    val token = response.body()?.token
                     if (!token.isNullOrBlank()) {
                         prefsRepository.saveAuthToken(token)
                         sendFcmTokenToServer()
